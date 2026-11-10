@@ -32,11 +32,16 @@ toque esa capa:
 - SQL en snake_case y tablas en plural: venues, events, artists, event_artists,
   users, user_profiles, tickets.
 - spring.jpa.open-in-view=false.
+- Lombok está en el proyecto (versión gestionada por Spring Boot).
+- Entidades: solo @Getter. Prohibido @Data, @ToString y @EqualsAndHashCode
+  en entidades (recorren relaciones LAZY).
+- @Setter solo en campos concretos que deban cambiar, nunca a nivel de clase.
+- Constructor sin argumentos: explícito y protected (o @NoArgsConstructor(access = AccessLevel.PROTECTED)).
+- DTOs son records de Java: no usar Lombok en ellos.
 
-## Estado actual (actualizar al cerrar cada fase)
-- V1 aplicada (7 tablas). Rama de trabajo: feature/persistence-model.
-- Siguiente: enums, entidades JPA, repositories, V2 (artistas iniciales),
-  V3 (streaming_url), tests de integración.
+## Estado actual
+- V1 aplicada. Enums creados en com.pulsepass.model (Category, Status, TicketType, TicketStatus).
+- En curso: entidades (Venue, User, UserProfile, Artist, Event, Ticket).
 
 ## Flujo de trabajo
 - git flow: feature/* desde develop, PR a develop, release/* a main con tag.
