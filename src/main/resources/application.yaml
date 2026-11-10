@@ -1,3 +1,10 @@
 spring:
   application:
     name: pulsepass-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pulsepass
+    username: pulsepass
+    password: pulsepass
+  jpa:
+    hibernate:
+      ddl-auto: validate
