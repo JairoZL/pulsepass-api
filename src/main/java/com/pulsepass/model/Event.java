@@ -40,6 +40,9 @@ public class Event {
     @Column(name = "minimum_age", nullable = false)
     private Integer minimumAge;
 
+    @Column(name = "streaming_url", length = 500)
+    private String streamingUrl;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "venue_id", nullable = false)
     private Venue venue;
