@@ -40,8 +40,7 @@ toque esa capa:
 - DTOs son records de Java: no usar Lombok en ellos.
 
 ## Estado actual
-- V1 aplicada. Enums creados en com.pulsepass.model (Category, Status, TicketType, TicketStatus).
-- En curso: entidades (Venue, User, UserProfile, Artist, Event, Ticket).
+- modelo completo y migraciones V1–V3 aplicadas; falta repositories y tests.
 
 ## Flujo de trabajo
 - git flow: feature/* desde develop, PR a develop, release/* a main con tag.
