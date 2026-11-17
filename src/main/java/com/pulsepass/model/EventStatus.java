@@ -1,6 +1,6 @@
 package com.pulsepass.model;
 
-public enum Status {
+public enum EventStatus {
     DRAFT,
     PUBLISHED,
     SOLD_OUT,

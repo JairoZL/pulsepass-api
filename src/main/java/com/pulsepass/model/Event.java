@@ -32,7 +32,7 @@ public class Event {
     @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 100)
-    private Status status;
+    private EventStatus status;
 
     @Column(name = "event_date", nullable = false)
     private LocalDateTime eventDate;
@@ -56,7 +56,7 @@ public class Event {
     protected Event() { }
 
     public Event(String eventCode, String name, String description, Category category,
-                 Status status, LocalDateTime eventDate, Integer minimumAge, Venue venue) {
+                 EventStatus status, LocalDateTime eventDate, Integer minimumAge, Venue venue) {
         this.eventCode = eventCode;
         this.name = name;
         this.description = description;
