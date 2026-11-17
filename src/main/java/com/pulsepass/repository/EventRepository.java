@@ -16,6 +16,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     List<Event> findByStatusOrderByEventDateAsc(EventStatus status);
 
+    // Eventos de un venue por venue.code (Query Method navegando la relación)
+    List<Event> findByVenueCodeOrderByEventDateAsc(String venueCode);
+
     @Query("SELECT e FROM Event e JOIN e.artists a WHERE a.stageName=:stageName")
     List<Event> findByArtistStageName(@Param("stageName") String stageName);
 }
