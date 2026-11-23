@@ -40,7 +40,7 @@ toque esa capa:
 - DTOs son records de Java: no usar Lombok en ellos.
 
 ## Estado actual
-- modelo completo y migraciones V1–V3 aplicadas; falta repositories y tests.
+- modelo completo y migraciones V1–V3 aplicadas; repositories y pruebas de persistencia (QT-001..009) listos; siguen servicios, controladores y seguridad.
 
 ## Flujo de trabajo
 - git flow: feature/* desde develop, PR a develop, release/* a main con tag.
