@@ -2,7 +2,7 @@ package com.pulsepass.repository;
 
 import com.pulsepass.TestcontainersConfiguration;
 import com.pulsepass.model.Artist;
-import com.pulsepass.model.Category;
+import com.pulsepass.model.EventCategory;
 import com.pulsepass.model.Event;
 import com.pulsepass.model.EventStatus;
 import com.pulsepass.model.Ticket;
@@ -51,7 +51,7 @@ class ConsultasTest {
     }
 
     private Event nuevoEvento(String code, Venue venue, EventStatus status, LocalDateTime fecha) {
-        return em.persist(new Event(code, "Evento " + code, "Descripción " + code, Category.MUSIC,
+        return em.persist(new Event(code, "Evento " + code, "Descripción " + code, EventCategory.MUSIC,
                 status, fecha, 18, venue));
     }
 
