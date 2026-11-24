@@ -1,13 +1,17 @@
 package com.pulsepass.exception;
 
 import com.pulsepass.dto.response.ErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -16,6 +20,8 @@ import java.util.Map;
 // Único punto donde las excepciones se convierten en respuestas HTTP (CTRL-007, PRD §14 y §15)
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     // 400: un request con @Valid no cumplió las anotaciones de Bean Validation
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,9 +58,23 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, ex.getMessage(), Map.of());
     }
 
+    // 400: un parámetro de la URL (path o query) no se pudo convertir al tipo esperado (ej. id=abc)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Invalid value for parameter '" + ex.getName() + "'", Map.of());
+    }
+
+    // 400: falta un @RequestParam obligatorio
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Missing required parameter '" + ex.getParameterName() + "'", Map.of());
+    }
+
     // 500: cualquier otra excepción. Mensaje genérico: no se expone ex.getMessage() (NFR-CTRL-007)
+    // La excepción completa (con stack trace) solo va al log del servidor, nunca al cliente
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
+        log.error("Unexpected error", ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected internal error", Map.of());
     }
 
