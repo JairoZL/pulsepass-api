@@ -1,6 +1,6 @@
 package com.pulsepass.model;
 
-public enum Category {
+public enum EventCategory {
     MUSIC,
     SPORTS,
     TECHNOLOGY,

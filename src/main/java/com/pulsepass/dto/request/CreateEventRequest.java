@@ -1,6 +1,6 @@
 package com.pulsepass.dto.request;
 
-import com.pulsepass.model.Category;
+import com.pulsepass.model.EventCategory;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,7 +22,7 @@ public record CreateEventRequest(
         String description,
 
         @NotNull(message = "Category is required")
-        Category category,
+        EventCategory category,
 
         @NotNull(message = "Event date is required")
         LocalDateTime eventDate,

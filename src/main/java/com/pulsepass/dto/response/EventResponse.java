@@ -1,6 +1,6 @@
 package com.pulsepass.dto.response;
 
-import com.pulsepass.model.Category;
+import com.pulsepass.model.EventCategory;
 import com.pulsepass.model.EventStatus;
 
 import java.time.LocalDateTime;
@@ -12,7 +12,7 @@ public record EventResponse(
         String eventCode,
         String name,
         String description,
-        Category category,
+        EventCategory category,
         EventStatus status,
         LocalDateTime eventDate,
         Integer minimumAge,

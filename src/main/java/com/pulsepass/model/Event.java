@@ -27,7 +27,7 @@ public class Event {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, length = 100)
-    private Category category;
+    private EventCategory category;
 
     @Setter
     @Enumerated(EnumType.STRING)
@@ -55,7 +55,7 @@ public class Event {
 
     protected Event() { }
 
-    public Event(String eventCode, String name, String description, Category category,
+    public Event(String eventCode, String name, String description, EventCategory category,
                  EventStatus status, LocalDateTime eventDate, Integer minimumAge, Venue venue) {
         this.eventCode = eventCode;
         this.name = name;
