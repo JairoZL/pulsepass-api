@@ -47,7 +47,10 @@ toque esa capa:
     401/403 en JSON, tests de controladores con identidad y SeguridadRutasTest.
   - Etapa 4 hecha: JwtService, JwtAuthenticationFilter, AuthService, AuthController (login, me), registro con password,
     clave JWT por PULSEPASS_JWT_SECRET_BASE64 (.env, ver .env.example). Clave de tests en src/test/resources/config/application.yaml.
-  - Etapa 5: AuthorizationService (propiedad) y visibilidad de borradores con anotaciones de método.
+  - Etapa 5 hecha: AuthorizationService ("authz") + @PreAuthorize en TicketService/UserService,
+    @PostAuthorize/@PostFilter en EventService (borrador -> 404 con HiddenEventDeniedHandler),
+    DemoUsersInitializer (perfil dev). EventServiceImpl.findByArtist devuelve lista modificable por @PostFilter.
+  - Pendiente: revisión final contra DoD §22 y PR a develop.
 
 ## Decisiones de seguridad (Fase 4)
 - Recurso ajeno (ticket o usuario): 403 siempre (PRD Seguridad §11.1, §20.1).

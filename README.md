@@ -48,6 +48,8 @@ $b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create
 |---|---|---|
 | `PULSEPASS_JWT_SECRET_BASE64` | Sí (Base64 de 32+ bytes) | — |
 | `PULSEPASS_JWT_ISSUER` | No | `pulsepass-api` |
+| `PULSEPASS_DEMO_STAFF_PASSWORD` | Solo perfil `dev` | — (vacía: no crea `laura`) |
+| `PULSEPASS_DEMO_ADMIN_PASSWORD` | Solo perfil `dev` | — (vacía: no crea `admin`) |
 
 ```bash
 docker compose up -d        # levanta PostgreSQL en localhost:5432 (db/usuario/clave: pulsepass)
@@ -56,7 +58,38 @@ docker compose up -d        # levanta PostgreSQL en localhost:5432 (db/usuario/c
 
 La API queda en `http://localhost:8080`.
 
+### Cuentas de prueba (perfil `dev`)
+
+El registro público solo crea usuarios con rol `USER`. Para la demo, el perfil `dev` crea dos cuentas
+con las contraseñas definidas en `.env` (si ya existen, no las toca):
+
+```powershell
+./mvnw spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+| Usuario | Correo | Roles |
+|---|---|---|
+| `laura` | `laura@pulsepass.com` | USER, STAFF |
+| `admin` | `admin@pulsepass.com` | USER, ADMIN |
+
 ## Endpoints
+
+### Reglas de acceso (PRD Seguridad §11)
+
+| Acceso | Endpoints |
+|---|---|
+| Público | `POST /api/users`, `POST /api/auth/login`, GET de venues y artistas, `GET /api/events/published` |
+| Público, solo eventos `PUBLISHED` (STAFF/ADMIN ven todos) | `GET /api/events/{eventCode}` (borrador: 404), `GET /api/events/by-artist` |
+| Dueño o ADMIN | `GET /api/users/by-email`, `GET /api/users/by-username`, `GET /api/tickets/by-user`, `PATCH /api/tickets/{ticketCode}/cancel` |
+| Dueño, STAFF o ADMIN | `GET /api/tickets/{ticketCode}` |
+| USER, con su propio `userEmail` | `POST /api/tickets` |
+| STAFF o ADMIN | `GET /api/events/{eventCode}/tickets/paid`, `PATCH /api/tickets/{ticketCode}/use` |
+| ADMIN | `POST /api/events`, `PATCH /api/events/{eventCode}/publish`, `POST /api/events/{eventCode}/artists/{artistId}` |
+| Autenticado | `GET /api/auth/me` y cualquier ruta no listada |
+
+La propiedad se comprueba con el id del usuario del token contra la base, nunca con el correo
+que envía el cliente. Recurso ajeno: 403. Limitación del MVP: STAFF opera sobre todos los eventos,
+porque el dominio no modela qué personal trabaja en qué evento (§11.1).
 
 ### Autenticación
 
@@ -173,7 +206,7 @@ Comprar ticket (`POST /api/tickets`). El precio no se envía: lo calcula el sist
 | 201 Created | Creación de evento, usuario o ticket |
 | 400 Bad Request | Bean Validation falla, JSON mal formado, parámetro faltante o con tipo inválido |
 | 401 Unauthorized | Sin token, token inválido o vencido, login fallido |
-| 403 Forbidden | Token válido pero sin el rol necesario |
+| 403 Forbidden | Token válido pero sin el rol necesario, o recurso de otro usuario |
 | 404 Not Found | Recurso inexistente o ruta que no existe |
 | 409 Conflict | Duplicado o regla de negocio incumplida |
 | 500 Internal Server Error | Error inesperado (sin exponer detalles internos) |
@@ -202,7 +235,7 @@ Todos los errores usan el mismo formato (`ErrorResponse`):
 | Controladores | `controller/*ControllerTest` | `@WebMvcTest`, MockMvc, `@MockitoBean` | No |
 | Persistencia | `repository/*Test` | `@DataJpaTest`, Testcontainers + PostgreSQL | Sí |
 | Seguridad web | `security/SeguridadRutasTest`, `security/AutenticacionJwtTest` | `@WebMvcTest` con la `SecurityConfig` real | No |
-| Seguridad unitaria | `security/JwtServiceTest`, `security/CustomUserDetailsServiceTest`, `service/AuthServiceTest` | JUnit 5, Mockito | No |
+| Seguridad unitaria | `security/JwtServiceTest`, `security/CustomUserDetailsServiceTest`, `security/AuthorizationServiceTest`, `security/DemoUsersInitializerTest`, `service/AuthServiceTest` | JUnit 5, Mockito | No |
 | Integración | `integration/*IntegracionTest` | `@SpringBootTest` + MockMvc + Testcontainers | Sí |
 | Contexto completo | `PulsepassApiApplicationTests` | `@SpringBootTest` | Sí |
 
