@@ -20,25 +20,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-// PRD Controladores 22.3. Solo capa web, ArtistService es un mock (NFR-CTRL-002, QT-CTRL-002)
-@WebMvcTest(ArtistController.class)
+
+@WebMvcTest(ArtistController.class)//simula el get de un cliente
 class ArtistControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private MockMvc mockMvc;//simulará una version del user sevice
 
     @MockitoBean
     private ArtistService artistService;
 
-    // Datos de V2__insert_initial_artists.sql y PRD Controladores 23.3
+    
     private final ArtistResponse solarBeat = new ArtistResponse(1L, "Solar Beat", "Colombia", "Electronic", true);
     private final ArtistResponse neonWaves = new ArtistResponse(2L, "Neon Waves", "Mexico", "Synthwave", true);
 
     @Test
-    void findById_artistaExistente_retorna200() throws Exception { // TEST-CTRL-ART-001
+    void findById_artistaExistente_retorna200() throws Exception { 
         when(artistService.findById(1L)).thenReturn(solarBeat);
 
-        mockMvc.perform(get("/api/artists/1"))
+        mockMvc.perform(get("/api/artists/1"))//enviamos la peticion al controlador y simulamos el get con los andExpect
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))

@@ -25,14 +25,10 @@ public class UserController {
         this.userService = userService;
     }
 
-    // FR-CTRL-USR-001. @RequestBody convierte el JSON en RegisterUserRequest.
-    // @Valid ejecuta Bean Validation ANTES de entrar al metodo: si falla, lanza
-    // MethodArgumentNotValidException (400) y el Service nunca se llama (CTRL-005).
-    // Una creacion responde 201 Created, no 200 (PRD 16, anti-patron 25.5)
-    @PostMapping
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {
-        UserResponse created = userService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    @PostMapping//Indica que el método recibe peticiones HTTP POST.
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {//indica que Spring debe tomar el contenido JSON enviado por el cliente y convertirlo en un objeto Java de tipo RegisterUserRequest.
+        UserResponse created = userService.register(request);//@Valid Esta anotación ejecuta las validaciones definidas en RegisterUserRequest.
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);//devuelve 201 created
     }
 
     // FR-CTRL-USR-002. /api/users/by-email?email=...

@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-// Contrato HTTP: PRD Controladores 8.3 (FR-CTRL-ART-001, FR-CTRL-ART-002, FR-CTRL-ART-003)
+
 @RestController
-@RequestMapping("/api/artists")
+@RequestMapping("/api/artists")//define la ruta base
 public class ArtistController {
 
     // Depende solo del Service (CTRL-002, NFR-CTRL-004)
@@ -23,23 +23,20 @@ public class ArtistController {
         this.artistService = artistService;
     }
 
-    // FR-CTRL-ART-003. Ruta literal: tiene prioridad sobre /{id}
-    @GetMapping("/active")
-    public ResponseEntity<List<ArtistResponse>> findActiveArtists() {
-        return ResponseEntity.ok(artistService.findActiveArtists());
+    
+    @GetMapping("/active")//indica que este método responde a peticiones GET en /api/artists/active.
+    public ResponseEntity<List<ArtistResponse>> findActiveArtists() {//indicamos que devuelve una lista de objetos de artist response
+        return ResponseEntity.ok(artistService.findActiveArtists());//llama al servicio
     }
 
-    // FR-CTRL-ART-002. stageName viaja como query param: /api/artists/by-stage-name?stageName=Solar Beat
-    // @RequestParam es obligatorio por defecto: si falta, Spring lanza MissingServletRequestParameterException (400)
     @GetMapping("/by-stage-name")
-    public ResponseEntity<ArtistResponse> findByStageName(@RequestParam String stageName) {
+    public ResponseEntity<ArtistResponse> findByStageName(@RequestParam String stageName) {//requestParam toma la variable despues del bystageName
         return ResponseEntity.ok(artistService.findByStageName(stageName));
-    }
+    }   
 
-    // FR-CTRL-ART-001. Spring convierte el texto de la URL a Long; si no puede (ej. "abc"),
-    // lanza MethodArgumentTypeMismatchException (400) antes de entrar al metodo
+    
     @GetMapping("/{id}")
-    public ResponseEntity<ArtistResponse> findById(@PathVariable Long id) {
+    public ResponseEntity<ArtistResponse> findById(@PathVariable Long id) {//el valor lo toma de la ruta
         return ResponseEntity.ok(artistService.findById(id));
     }
 }

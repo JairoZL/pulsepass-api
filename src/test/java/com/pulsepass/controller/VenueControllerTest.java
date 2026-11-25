@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class VenueControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private MockMvc mockMvc;/*simula el cliente que hace un get */
 
     // Mock del Service (QT-CTRL-002)
     @MockitoBean
@@ -79,3 +79,4 @@ class VenueControllerTest {
         verify(venueService).findActiveVenues();
     }
 }
+        

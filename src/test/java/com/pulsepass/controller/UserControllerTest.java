@@ -27,13 +27,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserController.class)
 class UserControllerTest {
 
-    @Autowired
+    @Autowired//simula el get
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserService userService;
+    private UserService userService;//simula el service
 
-    // Usuaria de referencia: Andrea, adulta y activa (PRD Controladores 23.4)
+   
     private final UserResponse andrea = new UserResponse(1L, "andrea", "andrea@pulsepass.com", true);
 
     // El JSON se escribe a mano (text block) para ver exactamente lo que enviaria un cliente
@@ -56,7 +56,7 @@ class UserControllerTest {
             "3001234567", "Santa Marta", LocalDate.of(2000, 5, 10));
 
     @Test
-    void register_requestValido_retorna201() throws Exception { // TEST-CTRL-USR-001 / AC-CTRL-007
+    void register_requestValido_retorna201() throws Exception { 
         when(userService.register(validRequest)).thenReturn(andrea);
 
         mockMvc.perform(post("/api/users")
@@ -72,7 +72,7 @@ class UserControllerTest {
     }
 
     @Test
-    void register_emailInvalido_retorna400SinLlamarAlService() throws Exception { // TEST-CTRL-USR-002 / QT-CTRL-007, QT-CTRL-010
+    void register_emailInvalido_retorna400SinLlamarAlService() throws Exception { 
         String json = VALID_JSON.replace("andrea@pulsepass.com", "no-es-un-email");
 
         mockMvc.perform(post("/api/users")
@@ -88,7 +88,7 @@ class UserControllerTest {
     }
 
     @Test
-    void register_usernameDuplicado_retorna409() throws Exception { // TEST-CTRL-USR-003 / AC-CTRL-008
+    void register_usernameDuplicado_retorna409() throws Exception { //Usuario duplicado
         when(userService.register(validRequest))
                 .thenThrow(new DuplicateResourceException("Username already exists: andrea"));
 
@@ -106,7 +106,7 @@ class UserControllerTest {
     }
 
     @Test
-    void findByEmail_retorna200() throws Exception { // TEST-CTRL-USR-004
+    void findByEmail_retorna200() throws Exception { 
         when(userService.findByEmail("andrea@pulsepass.com")).thenReturn(andrea);
 
         mockMvc.perform(get("/api/users/by-email").param("email", "andrea@pulsepass.com"))
