@@ -26,4 +26,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     @Query("SELECT COUNT(t) FROM Ticket t WHERE t.event.eventCode = :eventCode AND t.status = :status")
     long countByEventCodeAndStatus(@Param("eventCode") String eventCode, @Param("status") TicketStatus status);
+
+    // PRD Seguridad §11.1: ¿el ticket es de este usuario? Lo usa AuthorizationService.
+    // "UserId" navega ticket.user.id (la FK user_id); exists solo hace un SELECT 1, sin cargar el ticket
+    boolean existsByTicketCodeAndUserId(String ticketCode, Long userId);
 }

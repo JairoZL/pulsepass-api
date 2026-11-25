@@ -10,6 +10,10 @@ import com.pulsepass.model.EventCategory;
 import com.pulsepass.model.EventStatus;
 import com.pulsepass.service.EventService;
 import org.junit.jupiter.api.Test;
+import com.pulsepass.security.CustomUserDetailsService;
+import com.pulsepass.security.SecurityConfig;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -32,11 +36,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // PRD Controladores 22.2. Solo capa web, EventService es un mock (NFR-CTRL-002, QT-CTRL-002)
+// Seguridad (PRD Seguridad §17.2, T-SEC-020): se importa la SecurityConfig real, sin desactivar filtros.
+// Rutas públicas se prueban como anónimo; las protegidas con @WithMockUser y el rol mínimo de la matriz §11.
+// La matriz completa (401/403 por rol) está en security/SeguridadRutasTest.
 @WebMvcTest(EventController.class)
+@Import(SecurityConfig.class)
 class EventControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // SecurityConfig la necesita para el filtro JWT y el login. Aquí no se usan tokens: basta un mock
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @MockitoBean
     private EventService eventService;
@@ -75,6 +87,7 @@ class EventControllerTest {
     // --- POST /api/events ---
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void create_requestValido_retorna201EnDraft() throws Exception { // TEST-CTRL-EVT-001 / AC-CTRL-003
         when(eventService.create(validRequest)).thenReturn(cmf(EventStatus.DRAFT, List.of()));
 
@@ -92,6 +105,7 @@ class EventControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void create_requestInvalido_retorna400ConDetails() throws Exception { // TEST-CTRL-EVT-002 / AC-CTRL-004
         // Mismo ejemplo del PRD 13: faltan eventCode y venueCode
         String json = VALID_JSON
@@ -111,6 +125,7 @@ class EventControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void create_edadMinimaNegativa_retorna400() throws Exception { // PRD 11.1 @Min(0)
         String json = VALID_JSON.replace("\"minimumAge\": 18", "\"minimumAge\": -1");
 
@@ -124,6 +139,7 @@ class EventControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void create_categoriaInexistente_retorna400() throws Exception { // PRD 11.4 JSON mal formado
         // "CONCIERTO" no existe en EventCategory: Jackson no puede convertirlo
         String json = VALID_JSON.replace("\"MUSIC\"", "\"CONCIERTO\"");
@@ -186,6 +202,7 @@ class EventControllerTest {
     // --- PATCH /api/events/{eventCode}/publish ---
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void publish_eventoEnDraft_retorna200() throws Exception { // TEST-CTRL-EVT-006 / AC-CTRL-005
         when(eventService.publish("CMF-2026")).thenReturn(cmf(EventStatus.PUBLISHED, List.of()));
 
@@ -198,6 +215,7 @@ class EventControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void publish_eventoNoDraft_retorna409() throws Exception { // TEST-CTRL-EVT-007 / AC-CTRL-006
         when(eventService.publish("CMF-2026"))
                 .thenThrow(new BusinessRuleException("Only DRAFT events can be published"));
@@ -215,6 +233,7 @@ class EventControllerTest {
     // --- POST /api/events/{eventCode}/artists/{artistId} ---
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void addArtist_asociacionValida_retorna200() throws Exception { // TEST-CTRL-EVT-008
         when(eventService.addArtist("CMF-2026", 1L)).thenReturn(cmf(EventStatus.DRAFT, List.of(solarBeat)));
 
@@ -228,6 +247,7 @@ class EventControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void addArtist_artistaRepetido_retorna409() throws Exception { // FR-CTRL-EVT-005 conflicto / BR-EVENT-010
         when(eventService.addArtist("CMF-2026", 1L))
                 .thenThrow(new BusinessRuleException("Artist already associated to event: Solar Beat"));
@@ -240,6 +260,7 @@ class EventControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void addArtist_artistIdNoNumerico_retorna400SinLlamarAlService() throws Exception { // QT-CTRL-007
         mockMvc.perform(post("/api/events/CMF-2026/artists/abc"))
                 .andExpect(status().isBadRequest())

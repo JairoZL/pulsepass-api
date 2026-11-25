@@ -40,7 +40,28 @@ toque esa capa:
 - DTOs son records de Java: no usar Lombok en ellos.
 
 ## Estado actual
-- modelo completo y migraciones V1–V3 aplicadas; repositories y pruebas de persistencia (QT-001..009) listos; siguen servicios, controladores y seguridad.
+- Persistencia (V1–V3), servicios (MapStruct) y controladores (20 endpoints) en develop, 132 tests en verde.
+- En curso: seguridad en feature/security-layer.
+  - Etapa 2 hecha: V4, UserCredential, UserRole.
+  - Etapa 3 hecha: pom (security + JJWT 0.13.0), BCrypt, CustomUserDetailsService, SecurityConfig con la matriz §11,
+    401/403 en JSON, tests de controladores con identidad y SeguridadRutasTest.
+  - Etapa 4 hecha: JwtService, JwtAuthenticationFilter, AuthService, AuthController (login, me), registro con password,
+    clave JWT por PULSEPASS_JWT_SECRET_BASE64 (.env, ver .env.example). Clave de tests en src/test/resources/config/application.yaml.
+  - Etapa 5 hecha: AuthorizationService ("authz") + @PreAuthorize en TicketService/UserService,
+    @PostAuthorize/@PostFilter en EventService (borrador -> 404 con HiddenEventDeniedHandler),
+    DemoUsersInitializer (perfil dev). EventServiceImpl.findByArtist devuelve lista modificable por @PostFilter.
+  - Cierre: RequestIdFilter (X-Request-Id + MDC, NFR-SEC-006), logs de 401/403, README con verificación
+    y brechas conocidas (CORS documentado como brecha). Pendiente: ensayo de la demo §23 y PR a develop.
+
+## Decisiones de seguridad (Fase 4)
+- Recurso ajeno (ticket o usuario): 403 siempre (PRD Seguridad §11.1, §20.1).
+- Evento no publicado pedido sin STAFF/ADMIN: 404, no se revela que existe (FR-SEC-EVT-02/06).
+- "ADMIN con propósito autorizado" = hasRole('ADMIN') (FR-SEC-USR-02/03, FR-SEC-TKT-03/05).
+- Propiedad y visibilidad: anotaciones de método en las interfaces de Service (§3.2), no en Controllers.
+- Registro: AuthService.register (@Transactional) llama a UserService.register y guarda credencial + ROLE_USER (§9.3).
+- Roles: entidad UserRole con @EmbeddedId UserRoleId. V4 da ROLE_USER a usuarios legados, sin credencial (§9.2).
+- Cuentas STAFF/ADMIN de demo: runner solo con perfil dev, contraseñas por variables de entorno (NFR-SEC-009).
+- AccessDeniedException debe pasar al filtro de seguridad: el handler de 500 no puede tragársela (SEC-009).
 
 ## Flujo de trabajo
 - git flow: feature/* desde develop, PR a develop, release/* a main con tag.

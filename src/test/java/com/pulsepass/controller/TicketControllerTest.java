@@ -8,6 +8,10 @@ import com.pulsepass.model.TicketStatus;
 import com.pulsepass.model.TicketType;
 import com.pulsepass.service.TicketService;
 import org.junit.jupiter.api.Test;
+import com.pulsepass.security.CustomUserDetailsService;
+import com.pulsepass.security.SecurityConfig;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -30,11 +34,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // PRD Controladores 22.5. Solo capa web, TicketService es un mock (NFR-CTRL-002, QT-CTRL-002)
+// Seguridad (PRD Seguridad §17.2, T-SEC-020): se importa la SecurityConfig real, sin desactivar filtros.
+// Rutas públicas se prueban como anónimo; las protegidas con @WithMockUser y el rol mínimo de la matriz §11.
+// La matriz completa (401/403 por rol) está en security/SeguridadRutasTest.
 @WebMvcTest(TicketController.class)
+@Import(SecurityConfig.class)
 class TicketControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // SecurityConfig la necesita para el filtro JWT y el login. Aquí no se usan tokens: basta un mock
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @MockitoBean
     private TicketService ticketService;
@@ -60,6 +72,7 @@ class TicketControllerTest {
     // --- POST /api/tickets ---
 
     @Test
+    @WithMockUser(roles = "USER")
     void purchase_compraValida_retorna201() throws Exception { // TEST-CTRL-TKT-001 / AC-CTRL-009
         when(ticketService.purchase(validRequest)).thenReturn(ticket(TicketStatus.PAID));
 
@@ -78,6 +91,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void purchase_requestInvalido_retorna400SinLlamarAlService() throws Exception { // TEST-CTRL-TKT-002 / QT-CTRL-007
         String json = """
                 {
@@ -100,6 +114,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void purchase_usuarioInexistente_retorna404() throws Exception { // TEST-CTRL-TKT-003
         when(ticketService.purchase(validRequest))
                 .thenThrow(new ResourceNotFoundException("User not found: andrea@pulsepass.com"));
@@ -115,6 +130,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void purchase_reglaDeNegocio_retorna409() throws Exception { // TEST-CTRL-TKT-004 / AC-CTRL-010
         // Laura tiene 17 anios y CMF-2026 exige 18: el Service rechaza, el Controller solo traduce a 409
         String json = VALID_JSON.replace("andrea@pulsepass.com", "laura@pulsepass.com");
@@ -138,6 +154,7 @@ class TicketControllerTest {
     // --- Consultas ---
 
     @Test
+    @WithMockUser(roles = "USER")
     void findByCode_retorna200() throws Exception { // TEST-CTRL-TKT-005
         when(ticketService.findByCode("TKT-0001")).thenReturn(ticket(TicketStatus.PAID));
 
@@ -151,6 +168,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void findByUserEmail_retorna200() throws Exception { // TEST-CTRL-TKT-006 / UC-CTRL-08
         when(ticketService.findByUserEmail("andrea@pulsepass.com")).thenReturn(List.of(ticket(TicketStatus.PAID)));
 
@@ -164,6 +182,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "STAFF")
     void findPaidTicketsByEvent_retorna200() throws Exception { // TEST-CTRL-TKT-007
         when(ticketService.findPaidTicketsByEvent("CMF-2026")).thenReturn(List.of(ticket(TicketStatus.PAID)));
 
@@ -180,6 +199,7 @@ class TicketControllerTest {
     // --- PATCH /cancel ---
 
     @Test
+    @WithMockUser(roles = "USER")
     void cancel_ticketPaid_retorna200() throws Exception { // TEST-CTRL-TKT-008 / AC-CTRL-011
         when(ticketService.cancel("TKT-0001")).thenReturn(ticket(TicketStatus.CANCELLED));
 
@@ -192,6 +212,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void cancel_ticketUsado_retorna409() throws Exception { // TEST-CTRL-TKT-009 / AC-CTRL-012
         when(ticketService.cancel("TKT-0001"))
                 .thenThrow(new BusinessRuleException("A USED ticket cannot be cancelled"));
@@ -207,6 +228,7 @@ class TicketControllerTest {
     // --- PATCH /use ---
 
     @Test
+    @WithMockUser(roles = "STAFF")
     void markAsUsed_ticketPaid_retorna200() throws Exception { // TEST-CTRL-TKT-010 / AC-CTRL-013
         when(ticketService.markAsUsed("TKT-0001")).thenReturn(ticket(TicketStatus.USED));
 
@@ -219,6 +241,7 @@ class TicketControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "STAFF")
     void markAsUsed_ticketCancelado_retorna409() throws Exception { // TEST-CTRL-TKT-011 / AC-CTRL-014
         when(ticketService.markAsUsed("TKT-0001"))
                 .thenThrow(new BusinessRuleException("A CANCELLED ticket cannot be used"));

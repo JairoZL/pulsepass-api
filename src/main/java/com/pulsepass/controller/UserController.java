@@ -2,6 +2,7 @@ package com.pulsepass.controller;
 
 import com.pulsepass.dto.request.RegisterUserRequest;
 import com.pulsepass.dto.response.UserResponse;
+import com.pulsepass.service.AuthService;
 import com.pulsepass.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -20,14 +21,18 @@ public class UserController {
 
     // Depende solo del Service (CTRL-002, NFR-CTRL-004)
     private final UserService userService;
+    // PRD Seguridad §9.3: el registro ahora pasa por AuthService, que crea el usuario
+    // (con UserService) y su credencial + ROLE_USER en una sola transacción
+    private final AuthService authService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, AuthService authService) {
         this.userService = userService;
+        this.authService = authService;
     }
 
     @PostMapping//Indica que el método recibe peticiones HTTP POST.
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {//indica que Spring debe tomar el contenido JSON enviado por el cliente y convertirlo en un objeto Java de tipo RegisterUserRequest.
-        UserResponse created = userService.register(request);//@Valid Esta anotación ejecuta las validaciones definidas en RegisterUserRequest.
+        UserResponse created = authService.register(request);//@Valid Esta anotación ejecuta las validaciones definidas en RegisterUserRequest.
         return ResponseEntity.status(HttpStatus.CREATED).body(created);//devuelve 201 created
     }
 

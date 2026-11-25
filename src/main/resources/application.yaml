@@ -1,6 +1,9 @@
 spring:
   application:
     name: pulsepass-api
+  # Lee un archivo .env de la raíz del proyecto si existe (opcional). Ese archivo NO se sube a git
+  config:
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/pulsepass
     username: pulsepass
@@ -9,3 +12,18 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+
+# PRD Seguridad NFR-SEC-006: cada línea de log lleva el request ID que pone RequestIdFilter.
+# Spring Boot inserta este patrón en su formato de log por defecto
+logging:
+  pattern:
+    correlation: "[%X{requestId:-}] "
+
+# PRD Seguridad §14.2. La clave NO tiene valor por defecto: si falta PULSEPASS_JWT_SECRET_BASE64
+# la aplicación no arranca (SEC-004, §12.2). Ver .env.example
+pulsepass:
+  security:
+    jwt:
+      issuer: ${PULSEPASS_JWT_ISSUER:pulsepass-api}
+      secret-base64: ${PULSEPASS_JWT_SECRET_BASE64}
+      access-token-ttl: PT15M

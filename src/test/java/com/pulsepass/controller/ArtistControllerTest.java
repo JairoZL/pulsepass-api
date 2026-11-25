@@ -4,6 +4,10 @@ import com.pulsepass.dto.response.ArtistResponse;
 import com.pulsepass.exception.ResourceNotFoundException;
 import com.pulsepass.service.ArtistService;
 import org.junit.jupiter.api.Test;
+import com.pulsepass.security.CustomUserDetailsService;
+import com.pulsepass.security.SecurityConfig;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -21,11 +25,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
+// Seguridad (PRD Seguridad §17.2, T-SEC-020): se importa la SecurityConfig real, sin desactivar filtros.
+// Rutas públicas se prueban como anónimo; las protegidas con @WithMockUser y el rol mínimo de la matriz §11.
+// La matriz completa (401/403 por rol) está en security/SeguridadRutasTest.
 @WebMvcTest(ArtistController.class)//simula el get de un cliente
+@Import(SecurityConfig.class)
 class ArtistControllerTest {
 
     @Autowired
     private MockMvc mockMvc;//simulará una version del user sevice
+
+    // SecurityConfig la necesita para el filtro JWT y el login. Aquí no se usan tokens: basta un mock
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @MockitoBean
     private ArtistService artistService;
@@ -113,6 +125,7 @@ class ArtistControllerTest {
     }
 
     @Test
+    @WithMockUser
     void rutaInexistente_retorna404ConErrorResponse() throws Exception { // NFR-CTRL-003
         mockMvc.perform(get("/api/artistas"))
                 .andExpect(status().isNotFound())

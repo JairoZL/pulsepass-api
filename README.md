@@ -8,6 +8,7 @@ venues, artistas, usuarios y entradas (tickets).
 - Java 21, Spring Boot 4.1, Maven (wrapper incluido: `mvnw`)
 - Spring MVC, Bean Validation, Spring Data JPA / Hibernate
 - PostgreSQL 18 (Docker), Flyway
+- Spring Security 7 + JJWT 0.13 (JWT HS256, API stateless con `Authorization: Bearer`)
 - JUnit 5, Mockito, MockMvc, Testcontainers
 
 ## Arquitectura
@@ -33,6 +34,23 @@ HTTP Request → Controller → Service → Repository → PostgreSQL
 
 ## Ejecutar la aplicación
 
+La aplicación **no arranca sin la clave JWT** (PRD Seguridad §12.2). Una sola vez:
+
+```powershell
+Copy-Item .env.example .env
+# Generar una clave aleatoria de 32 bytes y pegarla en .env como PULSEPASS_JWT_SECRET_BASE64
+$b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
+```
+
+`.env` está en `.gitignore` y Spring Boot lo lee al arrancar (`spring.config.import`). Nunca lo subas al repo.
+
+| Variable | Obligatoria | Valor por defecto |
+|---|---|---|
+| `PULSEPASS_JWT_SECRET_BASE64` | Sí (Base64 de 32+ bytes) | — |
+| `PULSEPASS_JWT_ISSUER` | No | `pulsepass-api` |
+| `PULSEPASS_DEMO_STAFF_PASSWORD` | Solo perfil `dev` | — (vacía: no crea `laura`) |
+| `PULSEPASS_DEMO_ADMIN_PASSWORD` | Solo perfil `dev` | — (vacía: no crea `admin`) |
+
 ```bash
 docker compose up -d        # levanta PostgreSQL en localhost:5432 (db/usuario/clave: pulsepass)
 ./mvnw spring-boot:run      # Flyway crea el esquema al arrancar
@@ -40,7 +58,56 @@ docker compose up -d        # levanta PostgreSQL en localhost:5432 (db/usuario/c
 
 La API queda en `http://localhost:8080`.
 
+### Cuentas de prueba (perfil `dev`)
+
+El registro público solo crea usuarios con rol `USER`. Para la demo, el perfil `dev` crea dos cuentas
+con las contraseñas definidas en `.env` (si ya existen, no las toca):
+
+```powershell
+./mvnw spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+| Usuario | Correo | Roles |
+|---|---|---|
+| `laura` | `laura@pulsepass.com` | USER, STAFF |
+| `admin` | `admin@pulsepass.com` | USER, ADMIN |
+
 ## Endpoints
+
+### Reglas de acceso (PRD Seguridad §11)
+
+| Acceso | Endpoints |
+|---|---|
+| Público | `POST /api/users`, `POST /api/auth/login`, GET de venues y artistas, `GET /api/events/published` |
+| Público, solo eventos `PUBLISHED` (STAFF/ADMIN ven todos) | `GET /api/events/{eventCode}` (borrador: 404), `GET /api/events/by-artist` |
+| Dueño o ADMIN | `GET /api/users/by-email`, `GET /api/users/by-username`, `GET /api/tickets/by-user`, `PATCH /api/tickets/{ticketCode}/cancel` |
+| Dueño, STAFF o ADMIN | `GET /api/tickets/{ticketCode}` |
+| USER, con su propio `userEmail` | `POST /api/tickets` |
+| STAFF o ADMIN | `GET /api/events/{eventCode}/tickets/paid`, `PATCH /api/tickets/{ticketCode}/use` |
+| ADMIN | `POST /api/events`, `PATCH /api/events/{eventCode}/publish`, `POST /api/events/{eventCode}/artists/{artistId}` |
+| Autenticado | `GET /api/auth/me` y cualquier ruta no listada |
+
+La propiedad se comprueba con el id del usuario del token contra la base, nunca con el correo
+que envía el cliente. Recurso ajeno: 403. Limitación del MVP: STAFF opera sobre todos los eventos,
+porque el dominio no modela qué personal trabaja en qué evento (§11.1).
+
+### Autenticación
+
+| Método | Endpoint | Acceso | Respuesta |
+|---|---|---|---|
+| POST | `/api/auth/login` | Público | 200 · 400 · 401 |
+| GET | `/api/auth/me` | Bearer | 200 · 401 |
+
+```json
+POST /api/auth/login
+{ "identifier": "andrea", "password": "UnaFraseSeguraLarga2026!" }
+
+200
+{ "accessToken": "<JWT>", "tokenType": "Bearer", "expiresIn": 900 }
+```
+
+`identifier` acepta username o correo. Las rutas protegidas se llaman con el header
+`Authorization: Bearer <JWT>`. El token dura 15 minutos y no se acepta en la URL.
 
 ### Venues
 
@@ -113,9 +180,13 @@ Registrar usuario (`POST /api/users`):
   "lastName": "Gomez",
   "phone": "3001234567",
   "city": "Santa Marta",
-  "birthDate": "2000-05-10"
+  "birthDate": "2000-05-10",
+  "password": "UnaFraseSeguraLarga2026!"
 }
 ```
+
+`password`: mínimo 12 caracteres y máximo 72 bytes (límite de BCrypt). Se guarda solo su hash
+y nunca aparece en la respuesta. El registro público siempre asigna el rol `USER`.
 
 Comprar ticket (`POST /api/tickets`). El precio no se envía: lo calcula el sistema.
 
@@ -134,6 +205,8 @@ Comprar ticket (`POST /api/tickets`). El precio no se envía: lo calcula el sist
 | 200 OK | Consulta o actualización correcta |
 | 201 Created | Creación de evento, usuario o ticket |
 | 400 Bad Request | Bean Validation falla, JSON mal formado, parámetro faltante o con tipo inválido |
+| 401 Unauthorized | Sin token, token inválido o vencido, login fallido |
+| 403 Forbidden | Token válido pero sin el rol necesario, o recurso de otro usuario |
 | 404 Not Found | Recurso inexistente o ruta que no existe |
 | 409 Conflict | Duplicado o regla de negocio incumplida |
 | 500 Internal Server Error | Error inesperado (sin exponer detalles internos) |
@@ -155,12 +228,54 @@ Todos los errores usan el mismo formato (`ErrorResponse`):
 
 `details` solo trae contenido en errores de validación; en el resto llega vacío (`{}`).
 
+## Verificación de seguridad
+
+Suite completa (Docker Desktop encendido para Testcontainers):
+
+```bash
+./mvnw clean test
+```
+
+Solo las pruebas de seguridad que no necesitan Docker:
+
+```bash
+./mvnw test -Dtest="SeguridadRutasTest,AutenticacionJwtTest,JwtServiceTest,CustomUserDetailsServiceTest,AuthorizationServiceTest,AuthServiceTest,RequestIdFilterTest"
+```
+
+Comprobaciones manuales con la app corriendo (`curl.exe` en Windows):
+
+```powershell
+curl.exe -i http://localhost:8080/api/events/published                    # 200: público
+curl.exe -i http://localhost:8080/api/tickets/TKT-0001                    # 401: protegido, sin token
+curl.exe -i http://localhost:8080/api/no-existe                           # 401: denegar por defecto
+curl.exe -i -H "Authorization: Bearer abc" http://localhost:8080/api/events/published  # 401: token inválido
+```
+
+Cada respuesta trae el header `X-Request-Id`; el mismo id aparece entre corchetes en las líneas de log
+de ese request (login, token rechazado, 401, 403, 500).
+
+## Brechas conocidas (PRD Seguridad §16.1)
+
+Este es un MVP académico, no un sistema listo para producción. Quedan fuera del alcance y documentadas:
+
+| Brecha | Qué haría falta en producción |
+|---|---|
+| Sin límite de intentos de login | Bloqueo temporal o rate limiting contra fuerza bruta |
+| Sin revocación de tokens ni refresh token | El token vale hasta su `exp` (15 min); desactivar al usuario sí corta el acceso en el siguiente request |
+| Clave HMAC sin rotación automática | Gestor de secretos y rotación periódica |
+| HTTPS no configurado en la app (NFR-SEC-007) | TLS en el despliegue (proxy o servidor) fuera de localhost |
+| CORS sin configurar (NFR-SEC-008) | Lista explícita de orígenes si un frontend en otro dominio consume la API; hoy solo se usa Postman/curl |
+| STAFF con alcance global | Modelar qué personal trabaja en qué evento y restringir `/use` y `/tickets/paid` a esos eventos |
+
 ## Pruebas
 
 | Tipo | Clases | Herramientas | ¿Necesita Docker? |
 |---|---|---|---|
 | Controladores | `controller/*ControllerTest` | `@WebMvcTest`, MockMvc, `@MockitoBean` | No |
 | Persistencia | `repository/*Test` | `@DataJpaTest`, Testcontainers + PostgreSQL | Sí |
+| Seguridad web | `security/SeguridadRutasTest`, `security/AutenticacionJwtTest` | `@WebMvcTest` con la `SecurityConfig` real | No |
+| Seguridad unitaria | `security/JwtServiceTest`, `security/CustomUserDetailsServiceTest`, `security/AuthorizationServiceTest`, `security/DemoUsersInitializerTest`, `security/RequestIdFilterTest`, `service/AuthServiceTest` | JUnit 5, Mockito | No |
+| Integración | `integration/*IntegracionTest` | `@SpringBootTest` + MockMvc + Testcontainers | Sí |
 | Contexto completo | `PulsepassApiApplicationTests` | `@SpringBootTest` | Sí |
 
 ```bash
