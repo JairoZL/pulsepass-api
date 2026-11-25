@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { clasesBoton } from '../componentes/Boton'
+import { clasesBoton } from '../componentes/estilos'
 import { Contenedor } from '../componentes/Contenedor'
 import { Tarjeta } from '../componentes/Tarjeta'
 import { RUTAS } from '../lib/rutas'

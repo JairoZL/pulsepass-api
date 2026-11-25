@@ -1,5 +1,6 @@
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router'
-import { Boton, clasesBoton } from '../componentes/Boton'
+import { Boton } from '../componentes/Boton'
+import { clasesBoton } from '../componentes/estilos'
 import { Contenedor } from '../componentes/Contenedor'
 import { Tarjeta } from '../componentes/Tarjeta'
 import { esApiError } from '../lib/errores'

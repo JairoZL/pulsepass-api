@@ -1,6 +1,7 @@
 import { clsx } from 'clsx'
 import { useId, type ComponentProps } from 'react'
-import { clasesControl, describedBy, EnvolturaCampo } from './Campo'
+import { EnvolturaCampo } from './Campo'
+import { clasesControl, describedBy } from './estilos'
 
 interface PropsSelector extends ComponentProps<'select'> {
   etiqueta: string

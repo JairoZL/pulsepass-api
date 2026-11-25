@@ -1,5 +1,6 @@
-import { createContext, use, useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Aviso, type TonoAviso } from './Aviso'
+import { AvisosContext } from './avisosContexto'
 
 // FR-FE-GEN-003: avisos flotantes (toast) tras las mutaciones.
 // Éxito e info desaparecen a los 4 s; error y advertencia quedan hasta que se cierran (§9.20).
@@ -8,12 +9,6 @@ interface AvisoFlotante {
   tono: TonoAviso
   mensaje: string
 }
-
-interface ValorAvisos {
-  mostrarAviso: (tono: TonoAviso, mensaje: string) => void
-}
-
-const AvisosContext = createContext<ValorAvisos | null>(null)
 
 const DURACION_MS = 4000
 
@@ -59,10 +54,4 @@ export function AvisosProvider({ children }: { children: ReactNode }) {
       </div>
     </AvisosContext>
   )
-}
-
-export function useAvisos(): ValorAvisos {
-  const valor = use(AvisosContext)
-  if (!valor) throw new Error('useAvisos debe usarse dentro de <AvisosProvider>')
-  return valor
 }

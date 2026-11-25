@@ -45,9 +45,13 @@ describe('Guardas de ruta y sesión (PRD Frontend §12)', () => {
     await user.click(await within(encabezado).findByRole('button', { name: /andrea/ }))
     await user.click(within(encabezado).getByRole('button', { name: 'Salir' }))
 
-    expect(obtenerToken()).toBeNull()
+    // salir navega al inicio y después cierra la sesión: se espera a que termine
+    await waitFor(() => expect(obtenerToken()).toBeNull())
     expect(sessionStorage.getItem('pulsepass.sesion')).toBeNull()
-    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
+    // La caché privada se borró. El inicio vuelve a pedir sus datos públicos, así que la caché
+    // no queda vacía: lo que se comprueba es que no sobrevive nada personal
+    expect(queryClient.getQueryData(['tickets', 'usuario', 'andrea@pulsepass.test'])).toBeUndefined()
+    expect(queryClient.getQueryCache().findAll({ queryKey: ['usuario'] })).toHaveLength(0)
     expect(await within(encabezado).findByRole('link', { name: 'Ingresar' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
   })

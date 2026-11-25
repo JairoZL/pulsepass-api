@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { Cargando } from '../componentes/Estados'
-import { useAuth } from '../funcionalidades/auth/AuthContext'
+import { useAuth } from '../funcionalidades/auth/contexto'
 import { rutaDeRetorno } from '../lib/navegacion'
 
 // /login y /registro: si ya hay sesión no tiene sentido mostrarlos (PRD Frontend §9.8).

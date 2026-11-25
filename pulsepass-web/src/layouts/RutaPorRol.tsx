@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { Cargando } from '../componentes/Estados'
-import { useAuth } from '../funcionalidades/auth/AuthContext'
+import { useAuth } from '../funcionalidades/auth/contexto'
 import type { Rol } from '../funcionalidades/auth/tipos'
 import { RUTAS } from '../lib/rutas'
 

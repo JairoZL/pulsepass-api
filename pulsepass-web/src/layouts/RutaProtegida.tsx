@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { Cargando } from '../componentes/Estados'
-import { useAuth } from '../funcionalidades/auth/AuthContext'
+import { useAuth } from '../funcionalidades/auth/contexto'
 import { RUTAS } from '../lib/rutas'
 
 // PRD Frontend §8.2 y FE-004: exige sesión. Sin sesión -> /login recordando de dónde venía (state.desde).

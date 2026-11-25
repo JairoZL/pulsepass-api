@@ -1,9 +1,9 @@
 import { clsx } from 'clsx'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import { Avatar } from '../componentes/Avatar'
 import { IconoChevronAbajo } from '../componentes/Iconos'
-import { useAuth } from '../funcionalidades/auth/AuthContext'
+import { useSalir } from '../funcionalidades/auth/useSalir'
 import { rolPrincipal } from '../funcionalidades/auth/roles'
 import type { UsuarioAutenticado } from '../funcionalidades/auth/tipos'
 import { RUTAS } from '../lib/rutas'
@@ -18,8 +18,7 @@ const CLASE_OPCION =
 
 // PRD Frontend §9.2: con sesión, [ Andrea ▾ ] -> Mi cuenta · Mis tickets · Salir
 export function MenuUsuario({ usuario, enLinea = false }: PropsMenuUsuario) {
-  const { cerrarSesion } = useAuth()
-  const navigate = useNavigate()
+  const salir = useSalir()
   const [abierto, setAbierto] = useState(false)
   const contenedor = useRef<HTMLDivElement>(null)
   const esUser = rolPrincipal(usuario.roles) === 'USER'
@@ -35,10 +34,6 @@ export function MenuUsuario({ usuario, enLinea = false }: PropsMenuUsuario) {
   }, [abierto])
 
   // FR-FE-AUTH-006: salir borra token y caché, y vuelve al inicio
-  function salir() {
-    cerrarSesion()
-    navigate(RUTAS.inicio)
-  }
 
   const opciones = (
     <>
@@ -50,7 +45,7 @@ export function MenuUsuario({ usuario, enLinea = false }: PropsMenuUsuario) {
           Mis tickets
         </Link>
       ) : null}
-      <button type="button" className={clsx(CLASE_OPCION, 'text-red-600 dark:text-red-400')} onClick={salir}>
+      <button type="button" className={clsx(CLASE_OPCION, 'text-red-600 dark:text-red-400')} onClick={() => void salir()}>
         Salir
       </button>
     </>

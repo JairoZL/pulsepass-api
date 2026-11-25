@@ -263,3 +263,30 @@ export function IconoUsuario(props: PropsIcono) {
     </Icono>
   )
 }
+
+export function IconoMonitor(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </Icono>
+  )
+}
+
+export function IconoBalon(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2v20M2 12h20" />
+    </Icono>
+  )
+}
+
+export function IconoEdificio(props: PropsIcono) {
+  return (
+    <Icono {...props}>
+      <path d="M3 21h18M5 21V7l7-4 7 4v14" />
+      <path d="M9 21v-6h6v6" />
+    </Icono>
+  )
+}

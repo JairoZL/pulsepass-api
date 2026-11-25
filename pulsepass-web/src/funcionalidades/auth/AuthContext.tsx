@@ -1,21 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { configurarAlNoAutorizado } from '../../lib/http'
 import { borrarSesion, guardarSesion, leerSesionGuardada } from '../../lib/sesionAlmacen'
 import { obtenerUsuarioPorUsername } from '../usuarios/api'
 import { iniciarSesionApi, obtenerMe } from './api'
-import type { LoginForm, Rol, Sesion, UsuarioAutenticado } from './tipos'
+import { AuthContext, type ValorAuth } from './contexto'
+import type { LoginForm, Sesion, UsuarioAutenticado } from './tipos'
 
-// PRD Frontend §12.1: AuthContext expone sesion, iniciarSesion, cerrarSesion y tieneRol.
+// PRD Frontend §12.1: el proveedor de la sesión (sesion, iniciarSesion, cerrarSesion, tieneRol).
 // Solo guarda la identidad; los demás datos del servidor viven en TanStack Query (FE-005).
-interface ValorAuth {
-  sesion: Sesion
-  iniciarSesion: (datos: LoginForm) => Promise<void>
-  cerrarSesion: (motivo?: 'expirada') => void
-  tieneRol: (...roles: Rol[]) => boolean
-}
-
-export const AuthContext = createContext<ValorAuth | null>(null)
 
 // /api/auth/me no trae email (GAP-03): se completa con el perfil propio por username
 async function cargarUsuario(): Promise<UsuarioAutenticado> {
@@ -100,10 +93,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return <AuthContext value={valor}>{children}</AuthContext>
-}
-
-export function useAuth(): ValorAuth {
-  const valor = use(AuthContext)
-  if (!valor) throw new Error('useAuth debe usarse dentro de <AuthProvider>')
-  return valor
 }
