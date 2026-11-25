@@ -141,7 +141,9 @@ export const handlers = [
     const ticket = tickets.find((t) => t.ticketCode === params.ticketCode)
     const usuario = usuarioDe(request)
     if (!usuario) return errorApi(401, 'Se requiere autenticación')
-    // Igual que el backend: ajeno o inexistente -> 403 para un USER
+    // Igual que el backend: para STAFF/ADMIN un código inexistente es 404; para un USER,
+    // ajeno o inexistente es 403 (no revela si existe)
+    if (!ticket && esPersonal(request)) return errorApi(404, `Ticket not found: ${String(params.ticketCode)}`)
     if (!ticket || (ticket.userEmail !== usuario.email && !esPersonal(request))) {
       return errorApi(403, 'No tiene permisos para realizar esta operación')
     }

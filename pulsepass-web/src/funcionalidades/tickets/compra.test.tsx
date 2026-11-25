@@ -8,7 +8,7 @@ import { contarPeticiones, renderApp } from '../../test/utils'
 
 // PRD Frontend §9.5, FR-FE-TKT-001 y DES-10
 describe('Compra de una entrada', () => {
-  it('TEST-FE-TKT-001: confirmar envía userEmail, eventCode y type (nunca el precio) y va a la confirmación', async () => {
+  it('TEST-FE-TKT-001/004: confirmar envía userEmail, eventCode y type (nunca el precio) y va a la confirmación', async () => {
     let cuerpo: unknown
     server.use(
       http.post('/api/tickets', async ({ request }) => {
@@ -28,7 +28,7 @@ describe('Compra de una entrada', () => {
 
     await user.click(within(modal).getByRole('button', { name: 'Confirmar' }))
 
-    expect(await screen.findByRole('heading', { name: 'Confirmación de compra' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '¡Compra realizada con éxito!' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/compra/confirmacion/TKT-NUEVO1')
     expect(cuerpo).toEqual({ userEmail: 'andrea@pulsepass.test', eventCode: 'CMF-2026', type: 'VIP' })
   })
@@ -45,7 +45,7 @@ describe('Compra de una entrada', () => {
     expect(compras()).toBe(0)
   })
 
-  it('TEST-FE-TKT-002: un 409 (sin cupo) se muestra DENTRO del modal, que sigue abierto', async () => {
+  it('TEST-FE-TKT-003: un 409 (sin cupo) se muestra DENTRO del modal, que sigue abierto', async () => {
     server.use(http.post('/api/tickets', () => errorApi(409, 'No hay cupo disponible para el evento CMF-2026')))
     const { user, router } = renderApp('/eventos/CMF-2026', { usuario: 'andrea' })
 
