@@ -50,7 +50,8 @@ toque esa capa:
   - Etapa 5 hecha: AuthorizationService ("authz") + @PreAuthorize en TicketService/UserService,
     @PostAuthorize/@PostFilter en EventService (borrador -> 404 con HiddenEventDeniedHandler),
     DemoUsersInitializer (perfil dev). EventServiceImpl.findByArtist devuelve lista modificable por @PostFilter.
-  - Pendiente: revisión final contra DoD §22 y PR a develop.
+  - Cierre: RequestIdFilter (X-Request-Id + MDC, NFR-SEC-006), logs de 401/403, README con verificación
+    y brechas conocidas (CORS documentado como brecha). Pendiente: ensayo de la demo §23 y PR a develop.
 
 ## Decisiones de seguridad (Fase 4)
 - Recurso ajeno (ticket o usuario): 403 siempre (PRD Seguridad §11.1, §20.1).

@@ -228,6 +228,45 @@ Todos los errores usan el mismo formato (`ErrorResponse`):
 
 `details` solo trae contenido en errores de validación; en el resto llega vacío (`{}`).
 
+## Verificación de seguridad
+
+Suite completa (Docker Desktop encendido para Testcontainers):
+
+```bash
+./mvnw clean test
+```
+
+Solo las pruebas de seguridad que no necesitan Docker:
+
+```bash
+./mvnw test -Dtest="SeguridadRutasTest,AutenticacionJwtTest,JwtServiceTest,CustomUserDetailsServiceTest,AuthorizationServiceTest,AuthServiceTest,RequestIdFilterTest"
+```
+
+Comprobaciones manuales con la app corriendo (`curl.exe` en Windows):
+
+```powershell
+curl.exe -i http://localhost:8080/api/events/published                    # 200: público
+curl.exe -i http://localhost:8080/api/tickets/TKT-0001                    # 401: protegido, sin token
+curl.exe -i http://localhost:8080/api/no-existe                           # 401: denegar por defecto
+curl.exe -i -H "Authorization: Bearer abc" http://localhost:8080/api/events/published  # 401: token inválido
+```
+
+Cada respuesta trae el header `X-Request-Id`; el mismo id aparece entre corchetes en las líneas de log
+de ese request (login, token rechazado, 401, 403, 500).
+
+## Brechas conocidas (PRD Seguridad §16.1)
+
+Este es un MVP académico, no un sistema listo para producción. Quedan fuera del alcance y documentadas:
+
+| Brecha | Qué haría falta en producción |
+|---|---|
+| Sin límite de intentos de login | Bloqueo temporal o rate limiting contra fuerza bruta |
+| Sin revocación de tokens ni refresh token | El token vale hasta su `exp` (15 min); desactivar al usuario sí corta el acceso en el siguiente request |
+| Clave HMAC sin rotación automática | Gestor de secretos y rotación periódica |
+| HTTPS no configurado en la app (NFR-SEC-007) | TLS en el despliegue (proxy o servidor) fuera de localhost |
+| CORS sin configurar (NFR-SEC-008) | Lista explícita de orígenes si un frontend en otro dominio consume la API; hoy solo se usa Postman/curl |
+| STAFF con alcance global | Modelar qué personal trabaja en qué evento y restringir `/use` y `/tickets/paid` a esos eventos |
+
 ## Pruebas
 
 | Tipo | Clases | Herramientas | ¿Necesita Docker? |
@@ -235,7 +274,7 @@ Todos los errores usan el mismo formato (`ErrorResponse`):
 | Controladores | `controller/*ControllerTest` | `@WebMvcTest`, MockMvc, `@MockitoBean` | No |
 | Persistencia | `repository/*Test` | `@DataJpaTest`, Testcontainers + PostgreSQL | Sí |
 | Seguridad web | `security/SeguridadRutasTest`, `security/AutenticacionJwtTest` | `@WebMvcTest` con la `SecurityConfig` real | No |
-| Seguridad unitaria | `security/JwtServiceTest`, `security/CustomUserDetailsServiceTest`, `security/AuthorizationServiceTest`, `security/DemoUsersInitializerTest`, `service/AuthServiceTest` | JUnit 5, Mockito | No |
+| Seguridad unitaria | `security/JwtServiceTest`, `security/CustomUserDetailsServiceTest`, `security/AuthorizationServiceTest`, `security/DemoUsersInitializerTest`, `security/RequestIdFilterTest`, `service/AuthServiceTest` | JUnit 5, Mockito | No |
 | Integración | `integration/*IntegracionTest` | `@SpringBootTest` + MockMvc + Testcontainers | Sí |
 | Contexto completo | `PulsepassApiApplicationTests` | `@SpringBootTest` | Sí |
 

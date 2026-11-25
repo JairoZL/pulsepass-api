@@ -40,6 +40,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -273,6 +274,14 @@ class AutenticacionJwtTest {
         llamarRutaProtegida("Bearer " + token)
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().string(not(containsString(token))));
+    }
+
+    @Test
+    @DisplayName("NFR-SEC-006: la respuesta 401 trae X-Request-Id para encontrar el evento en los logs")
+    void respuesta401_traeRequestId() throws Exception {
+        mockMvc.perform(get(RUTA_PROTEGIDA).param("username", "andrea"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().exists(RequestIdFilter.HEADER));
     }
 
     // ---------- Rutas públicas ----------
