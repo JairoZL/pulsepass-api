@@ -1,0 +1,8 @@
+# Solo para pruebas (PRD Seguridad §14.2 y §17.3): clave ficticia, exclusiva de los tests.
+# Está en config/ porque Spring Boot carga classpath:/config/application.yaml DESPUÉS del
+# application.yaml principal y sus valores ganan. Así se reemplaza solo esta propiedad
+# y el resto de la configuración principal sigue igual.
+pulsepass:
+  security:
+    jwt:
+      secret-base64: UAQT5N7NYo5VdMZGxcm8+gu7vGDm0nsAy2w+tdidXWs9FuTp+lnCIOWsjuHIDcOY

@@ -10,6 +10,7 @@ import com.pulsepass.model.EventCategory;
 import com.pulsepass.model.EventStatus;
 import com.pulsepass.service.EventService;
 import org.junit.jupiter.api.Test;
+import com.pulsepass.security.CustomUserDetailsService;
 import com.pulsepass.security.SecurityConfig;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -44,6 +45,10 @@ class EventControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // SecurityConfig la necesita para el filtro JWT y el login. Aquí no se usan tokens: basta un mock
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @MockitoBean
     private EventService eventService;

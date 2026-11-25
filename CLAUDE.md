@@ -45,7 +45,8 @@ toque esa capa:
   - Etapa 2 hecha: V4, UserCredential, UserRole.
   - Etapa 3 hecha: pom (security + JJWT 0.13.0), BCrypt, CustomUserDetailsService, SecurityConfig con la matriz §11,
     401/403 en JSON, tests de controladores con identidad y SeguridadRutasTest.
-  - Sigue etapa 4: JwtService, JwtAuthenticationFilter, AuthService, AuthController (login, me, registro con password).
+  - Etapa 4 hecha: JwtService, JwtAuthenticationFilter, AuthService, AuthController (login, me), registro con password,
+    clave JWT por PULSEPASS_JWT_SECRET_BASE64 (.env, ver .env.example). Clave de tests en src/test/resources/config/application.yaml.
   - Etapa 5: AuthorizationService (propiedad) y visibilidad de borradores con anotaciones de método.
 
 ## Decisiones de seguridad (Fase 4)

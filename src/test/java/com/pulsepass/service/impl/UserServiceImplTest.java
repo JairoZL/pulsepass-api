@@ -189,7 +189,8 @@ class UserServiceImplTest {
     }
 
     private RegisterUserRequest request(LocalDate birthDate) {
+        // password: PRD Seguridad §9.3. UserService la ignora; la usa AuthService
         return new RegisterUserRequest(USERNAME, EMAIL, "Andrea", "Perez", "3001234567",
-                "Santa Marta", birthDate);
+                "Santa Marta", birthDate, "UnaFraseSeguraLarga2026!");
     }
 }

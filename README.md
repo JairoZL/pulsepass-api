@@ -8,6 +8,7 @@ venues, artistas, usuarios y entradas (tickets).
 - Java 21, Spring Boot 4.1, Maven (wrapper incluido: `mvnw`)
 - Spring MVC, Bean Validation, Spring Data JPA / Hibernate
 - PostgreSQL 18 (Docker), Flyway
+- Spring Security 7 + JJWT 0.13 (JWT HS256, API stateless con `Authorization: Bearer`)
 - JUnit 5, Mockito, MockMvc, Testcontainers
 
 ## Arquitectura
@@ -33,6 +34,21 @@ HTTP Request → Controller → Service → Repository → PostgreSQL
 
 ## Ejecutar la aplicación
 
+La aplicación **no arranca sin la clave JWT** (PRD Seguridad §12.2). Una sola vez:
+
+```powershell
+Copy-Item .env.example .env
+# Generar una clave aleatoria de 32 bytes y pegarla en .env como PULSEPASS_JWT_SECRET_BASE64
+$b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
+```
+
+`.env` está en `.gitignore` y Spring Boot lo lee al arrancar (`spring.config.import`). Nunca lo subas al repo.
+
+| Variable | Obligatoria | Valor por defecto |
+|---|---|---|
+| `PULSEPASS_JWT_SECRET_BASE64` | Sí (Base64 de 32+ bytes) | — |
+| `PULSEPASS_JWT_ISSUER` | No | `pulsepass-api` |
+
 ```bash
 docker compose up -d        # levanta PostgreSQL en localhost:5432 (db/usuario/clave: pulsepass)
 ./mvnw spring-boot:run      # Flyway crea el esquema al arrancar
@@ -41,6 +57,24 @@ docker compose up -d        # levanta PostgreSQL en localhost:5432 (db/usuario/c
 La API queda en `http://localhost:8080`.
 
 ## Endpoints
+
+### Autenticación
+
+| Método | Endpoint | Acceso | Respuesta |
+|---|---|---|---|
+| POST | `/api/auth/login` | Público | 200 · 400 · 401 |
+| GET | `/api/auth/me` | Bearer | 200 · 401 |
+
+```json
+POST /api/auth/login
+{ "identifier": "andrea", "password": "UnaFraseSeguraLarga2026!" }
+
+200
+{ "accessToken": "<JWT>", "tokenType": "Bearer", "expiresIn": 900 }
+```
+
+`identifier` acepta username o correo. Las rutas protegidas se llaman con el header
+`Authorization: Bearer <JWT>`. El token dura 15 minutos y no se acepta en la URL.
 
 ### Venues
 
@@ -113,9 +147,13 @@ Registrar usuario (`POST /api/users`):
   "lastName": "Gomez",
   "phone": "3001234567",
   "city": "Santa Marta",
-  "birthDate": "2000-05-10"
+  "birthDate": "2000-05-10",
+  "password": "UnaFraseSeguraLarga2026!"
 }
 ```
+
+`password`: mínimo 12 caracteres y máximo 72 bytes (límite de BCrypt). Se guarda solo su hash
+y nunca aparece en la respuesta. El registro público siempre asigna el rol `USER`.
 
 Comprar ticket (`POST /api/tickets`). El precio no se envía: lo calcula el sistema.
 
@@ -134,6 +172,8 @@ Comprar ticket (`POST /api/tickets`). El precio no se envía: lo calcula el sist
 | 200 OK | Consulta o actualización correcta |
 | 201 Created | Creación de evento, usuario o ticket |
 | 400 Bad Request | Bean Validation falla, JSON mal formado, parámetro faltante o con tipo inválido |
+| 401 Unauthorized | Sin token, token inválido o vencido, login fallido |
+| 403 Forbidden | Token válido pero sin el rol necesario |
 | 404 Not Found | Recurso inexistente o ruta que no existe |
 | 409 Conflict | Duplicado o regla de negocio incumplida |
 | 500 Internal Server Error | Error inesperado (sin exponer detalles internos) |
@@ -161,6 +201,9 @@ Todos los errores usan el mismo formato (`ErrorResponse`):
 |---|---|---|---|
 | Controladores | `controller/*ControllerTest` | `@WebMvcTest`, MockMvc, `@MockitoBean` | No |
 | Persistencia | `repository/*Test` | `@DataJpaTest`, Testcontainers + PostgreSQL | Sí |
+| Seguridad web | `security/SeguridadRutasTest`, `security/AutenticacionJwtTest` | `@WebMvcTest` con la `SecurityConfig` real | No |
+| Seguridad unitaria | `security/JwtServiceTest`, `security/CustomUserDetailsServiceTest`, `service/AuthServiceTest` | JUnit 5, Mockito | No |
+| Integración | `integration/*IntegracionTest` | `@SpringBootTest` + MockMvc + Testcontainers | Sí |
 | Contexto completo | `PulsepassApiApplicationTests` | `@SpringBootTest` | Sí |
 
 ```bash

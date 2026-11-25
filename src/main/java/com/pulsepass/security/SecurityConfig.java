@@ -1,8 +1,12 @@
 package com.pulsepass.security;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -11,20 +15,31 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import tools.jackson.databind.json.JsonMapper;
+
+import java.time.Clock;
 
 // PRD Seguridad §7.1 y §14.3: declara cómo se protege cada ruta. No contiene negocio.
 // @EnableMethodSecurity habilita @PreAuthorize/@PostAuthorize, que se usarán para
 // propiedad y visibilidad de borradores (etapa 5, §11.1).
+// @EnableConfigurationProperties: crea el bean JwtProperties con los valores de application.yaml.
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    RestAuthenticationEntryPoint authenticationEntryPoint,
-                                                   RestAccessDeniedHandler accessDeniedHandler) throws Exception {
+                                                   RestAccessDeniedHandler accessDeniedHandler,
+                                                   JwtService jwtService,
+                                                   CustomUserDetailsService userDetailsService) throws Exception {
+        // El filtro JWT se crea aquí y no como bean (ver comentario en JwtAuthenticationFilter)
+        JwtAuthenticationFilter jwtFilter =
+                new JwtAuthenticationFilter(jwtService, userDetailsService, authenticationEntryPoint);
+
         http
                 // CSRF protege sesiones por cookie. Esta API usa Bearer y no cookies, así que
                 // no aplica (§14.3 advertencia 6). Si algún día se usan cookies, hay que reactivarlo
@@ -43,7 +58,7 @@ public class SecurityConfig {
                 // por eso las rutas específicas van antes que los patrones generales (§14.3 adv. 4).
                 // "*" = un segmento de la URL; "**" = cualquier cantidad de segmentos.
                 .authorizeHttpRequests(auth -> auth
-                        // Registro y login públicos (FR-SEC-USR-01, §10.1)
+                        // Registro y login públicos (FR-SEC-USR-01, §10.1). /api/auth/me cae en anyRequest
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/users").permitAll()
 
                         // Lectura pública de venues y artistas (FR-SEC-VEN-01/02, FR-SEC-ART-01..03)
@@ -66,7 +81,10 @@ public class SecurityConfig {
                         // Todo lo demás exige identidad: TKT-02, TKT-03, TKT-05, USR-02, USR-03 y /api/auth/me.
                         // La comprobación de propietario se agrega a nivel de método (etapa 5, §11.1).
                         // Denegar por defecto: una ruta nueva o mal escrita nunca queda pública (SEC-001)
-                        .anyRequest().authenticated());
+                        .anyRequest().authenticated())
+                // El filtro JWT corre antes del filtro estándar de usuario/contraseña de Spring Security.
+                // Ese filtro no está activo (formLogin deshabilitado): solo sirve como punto de referencia
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -77,6 +95,24 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // Login (FR-SEC-AUTH-002): AuthService le pasa usuario + contraseña a este AuthenticationManager.
+    // DaoAuthenticationProvider busca al usuario con CustomUserDetailsService, verifica que esté
+    // activo y compara la contraseña con el hash usando BCrypt. Si algo falla lanza AuthenticationException.
+    // Por defecto convierte "usuario no existe" en BadCredentialsException: no revela si existe (FR-SEC-AUTH-003)
+    @Bean
+    public AuthenticationManager authenticationManager(CustomUserDetailsService userDetailsService,
+                                                       PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return new ProviderManager(provider);
+    }
+
+    // Reloj real del sistema en UTC. Los tests crean su propio JwtService con un reloj fijo
+    @Bean
+    public JwtService jwtService(JwtProperties jwtProperties) {
+        return new JwtService(jwtProperties, Clock.systemUTC());
     }
 
     // Las tres clases siguientes no tienen @Component: se registran aquí para que importar

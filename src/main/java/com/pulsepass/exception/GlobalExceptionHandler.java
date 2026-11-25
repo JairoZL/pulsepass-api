@@ -79,6 +79,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, "Resource not found: /" + ex.getResourcePath(), Map.of());
     }
 
+    // 401: login fallido (PRD Seguridad FR-SEC-AUTH-003). Mismo mensaje sin importar la causa
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), Map.of());
+    }
+
     // Errores de seguridad lanzados dentro del Controller o del Service (por ejemplo, un @PreAuthorize
     // que niega el acceso). No se responden aquí: se relanzan para que lleguen al filtro de
     // Spring Security, que decide 401 (anónimo) o 403 (autenticado sin permiso).

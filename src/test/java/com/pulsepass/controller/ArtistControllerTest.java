@@ -4,6 +4,7 @@ import com.pulsepass.dto.response.ArtistResponse;
 import com.pulsepass.exception.ResourceNotFoundException;
 import com.pulsepass.service.ArtistService;
 import org.junit.jupiter.api.Test;
+import com.pulsepass.security.CustomUserDetailsService;
 import com.pulsepass.security.SecurityConfig;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -33,6 +34,10 @@ class ArtistControllerTest {
 
     @Autowired
     private MockMvc mockMvc;//simulará una version del user sevice
+
+    // SecurityConfig la necesita para el filtro JWT y el login. Aquí no se usan tokens: basta un mock
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @MockitoBean
     private ArtistService artistService;

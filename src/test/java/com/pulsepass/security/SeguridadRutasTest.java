@@ -1,6 +1,7 @@
 package com.pulsepass.security;
 
 import com.pulsepass.service.ArtistService;
+import com.pulsepass.service.AuthService;
 import com.pulsepass.service.EventService;
 import com.pulsepass.service.TicketService;
 import com.pulsepass.service.UserService;
@@ -49,6 +50,9 @@ class SeguridadRutasTest {
     @MockitoBean private ArtistService artistService;
     @MockitoBean private UserService userService;
     @MockitoBean private TicketService ticketService;
+    @MockitoBean private AuthService authService;
+    // SecurityConfig la necesita para el filtro JWT; aquí la identidad se simula con user(...)
+    @MockitoBean private CustomUserDetailsService customUserDetailsService;
 
     // Los POST llevan "{}": el cuerpo no importa para seguridad (el filtro decide antes de leerlo)
     private MockHttpServletRequestBuilder solicitud(String metodo, String url) {
@@ -58,7 +62,7 @@ class SeguridadRutasTest {
     }
 
     private void verificarQueNingunServiceFueLlamado() {
-        verifyNoInteractions(venueService, eventService, artistService, userService, ticketService);
+        verifyNoInteractions(venueService, eventService, artistService, userService, ticketService, authService);
     }
 
     // ---------- Rutas públicas: un anónimo NO recibe 401 ni 403 ----------
@@ -74,6 +78,7 @@ class SeguridadRutasTest {
             "GET,  /api/events/CMF-2026",                         // FR-SEC-EVT-02 (borradores: etapa 5)
             "GET,  /api/events/by-artist?stageName=Solar",        // FR-SEC-EVT-06 (borradores: etapa 5)
             "POST, /api/users",                                   // FR-SEC-USR-01 (además prueba que no hay CSRF)
+            "POST, /api/auth/login",                              // §10.1
     })
     void rutaPublica_anonimo_noRecibe401Ni403(String metodo, String url) throws Exception {
         // Dado: sin identidad. Cuando: se llama la ruta pública
@@ -98,6 +103,7 @@ class SeguridadRutasTest {
             "GET,   /api/events/CMF-2026/tickets/paid",           // FR-SEC-TKT-04
             "PATCH, /api/tickets/TKT-0001/cancel",                // FR-SEC-TKT-05
             "PATCH, /api/tickets/TKT-0001/use",                   // FR-SEC-TKT-06
+            "GET,   /api/auth/me",                                // FR-SEC-AUTH-010
             "GET,   /api/no-existe",                              // SEC-001: denegar por defecto
     })
     void rutaProtegida_anonimo_retorna401SinLlamarAlService(String metodo, String url) throws Exception {
@@ -156,6 +162,7 @@ class SeguridadRutasTest {
             "PATCH, /api/tickets/TKT-0001/cancel,                 USER",
             "GET,   /api/users/by-email?email=andrea@pulsepass.com, USER",
             "GET,   /api/users/by-username?username=andrea,       USER",
+            "GET,   /api/auth/me,                                 USER",
     })
     void rolPermitido_noRecibe401Ni403(String metodo, String url, String rol) throws Exception {
         MvcResult resultado = mockMvc.perform(solicitud(metodo, url).with(user("tester").roles(rol)))

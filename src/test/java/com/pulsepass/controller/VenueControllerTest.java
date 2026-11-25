@@ -4,6 +4,7 @@ import com.pulsepass.dto.response.VenueResponse;
 import com.pulsepass.exception.ResourceNotFoundException;
 import com.pulsepass.service.VenueService;
 import org.junit.jupiter.api.Test;
+import com.pulsepass.security.CustomUserDetailsService;
 import com.pulsepass.security.SecurityConfig;
 import org.springframework.context.annotation.Import;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,10 @@ class VenueControllerTest {
 
     @Autowired
     private MockMvc mockMvc;/*simula el cliente que hace un get */
+
+    // SecurityConfig la necesita para el filtro JWT y el login. Aquí no se usan tokens: basta un mock
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     // Mock del Service (QT-CTRL-002)
     @MockitoBean
