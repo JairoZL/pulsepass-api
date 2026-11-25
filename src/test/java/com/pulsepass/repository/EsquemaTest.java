@@ -32,15 +32,15 @@ class EsquemaTest {
     private EntityManager entityManager;
 
     @Test
-    void qt001_dadaUnaBaseVacia_cuandoArrancaFlyway_entoncesAplicaV1V2yV3() {
+    void qt001_dadaUnaBaseVacia_cuandoArrancaFlyway_entoncesAplicaV1aV4() {
         // Dado: contenedor PostgreSQL nuevo (base vacía) y Flyway activo
         // Cuando: se consulta el historial de migraciones
         List<String> versiones = jdbcTemplate.queryForList(
                 "SELECT version FROM flyway_schema_history WHERE success = TRUE ORDER BY installed_rank",
                 String.class);
 
-        // Entonces: están aplicadas V1, V2 y V3, en orden
-        assertThat(versiones).containsExactly("1", "2", "3");
+        // Entonces: están aplicadas V1 a V4, en orden (V4: credenciales y roles, PRD Seguridad §9.2)
+        assertThat(versiones).containsExactly("1", "2", "3", "4");
     }
 
     @Test

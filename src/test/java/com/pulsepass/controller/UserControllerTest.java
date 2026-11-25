@@ -5,6 +5,9 @@ import com.pulsepass.dto.response.UserResponse;
 import com.pulsepass.exception.DuplicateResourceException;
 import com.pulsepass.service.UserService;
 import org.junit.jupiter.api.Test;
+import com.pulsepass.security.SecurityConfig;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -24,7 +27,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // PRD Controladores 22.4. Solo capa web, UserService es un mock (NFR-CTRL-002, QT-CTRL-002)
+// Seguridad (PRD Seguridad §17.2, T-SEC-020): se importa la SecurityConfig real, sin desactivar filtros.
+// Rutas públicas se prueban como anónimo; las protegidas con @WithMockUser y el rol mínimo de la matriz §11.
+// La matriz completa (401/403 por rol) está en security/SeguridadRutasTest.
 @WebMvcTest(UserController.class)
+@Import(SecurityConfig.class)
 class UserControllerTest {
 
     @Autowired//simula el get
@@ -106,6 +113,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void findByEmail_retorna200() throws Exception { 
         when(userService.findByEmail("andrea@pulsepass.com")).thenReturn(andrea);
 
@@ -119,6 +127,7 @@ class UserControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void findByUsername_retorna200() throws Exception { // TEST-CTRL-USR-005
         when(userService.findByUsername("andrea")).thenReturn(andrea);
 

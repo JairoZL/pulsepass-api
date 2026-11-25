@@ -4,6 +4,8 @@ import com.pulsepass.dto.response.VenueResponse;
 import com.pulsepass.exception.ResourceNotFoundException;
 import com.pulsepass.service.VenueService;
 import org.junit.jupiter.api.Test;
+import com.pulsepass.security.SecurityConfig;
+import org.springframework.context.annotation.Import;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -20,7 +22,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // PRD Controladores §22.1. Solo levanta la capa web: sin PostgreSQL ni Services reales (NFR-CTRL-002)
+// Seguridad (PRD Seguridad §17.2, T-SEC-020): se importa la SecurityConfig real, sin desactivar filtros.
+// Rutas públicas se prueban como anónimo; las protegidas con @WithMockUser y el rol mínimo de la matriz §11.
+// La matriz completa (401/403 por rol) está en security/SeguridadRutasTest.
 @WebMvcTest(VenueController.class)
+@Import(SecurityConfig.class)
 class VenueControllerTest {
 
     @Autowired
