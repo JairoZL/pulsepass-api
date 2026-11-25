@@ -6,8 +6,7 @@ import { Tarjeta } from '../componentes/Tarjeta'
 import { esApiError } from '../lib/errores'
 import { MENSAJES_GENERICOS } from '../lib/http'
 import { RUTAS } from '../lib/rutas'
-import NoEncontrada from './NoEncontrada'
-import SinPermisos from './SinPermisos'
+import { PaginaCodigo } from './PaginaCodigo'
 
 // errorElement de las rutas (PRD §9.19, TEST-FE-GEN-002). Nunca muestra el stack ni el mensaje
 // técnico del error: solo textos seguros. Un 403/404 al cargar la página usa sus pantallas propias.
@@ -15,10 +14,10 @@ export default function ErrorPagina() {
   const error = useRouteError()
 
   if ((isRouteErrorResponse(error) && error.status === 404) || esApiError(error, 404)) {
-    return <NoEncontrada />
+    return <PaginaCodigo codigo="404" mensaje="No encontramos esta página." />
   }
   if ((isRouteErrorResponse(error) && error.status === 403) || esApiError(error, 403)) {
-    return <SinPermisos />
+    return <PaginaCodigo codigo="403" mensaje="No tienes permisos para acceder a esta sección." />
   }
 
   return (

@@ -6,6 +6,7 @@ import { obtenerUsuarioPorUsername } from '../usuarios/api'
 import { iniciarSesionApi, obtenerMe } from './api'
 import { AuthContext, type ValorAuth } from './contexto'
 import type { LoginForm, Sesion, UsuarioAutenticado } from './tipos'
+import { borrarEventosCreados } from '../eventos/creadosSesion'
 
 // PRD Frontend §12.1: el proveedor de la sesión (sesion, iniciarSesion, cerrarSesion, tieneRol).
 // Solo guarda la identidad; los demás datos del servidor viven en TanStack Query (FE-005).
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const cerrarSesion = useCallback(
     (motivo?: 'expirada') => {
       borrarSesion()
+      borrarEventosCreados() // la lista de ADMIN es de esta sesión (§9.16)
       queryClient.clear()
       setSesion(motivo ? { estado: 'anonimo', motivo } : { estado: 'anonimo' })
     },

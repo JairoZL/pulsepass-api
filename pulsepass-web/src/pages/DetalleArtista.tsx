@@ -10,7 +10,7 @@ import { GrillaEventos } from '../funcionalidades/eventos/componentes/GrillaEven
 import { useEventosPorArtista } from '../funcionalidades/eventos/hooks'
 import { esApiError, mensajeDeError } from '../lib/errores'
 import { RUTAS } from '../lib/rutas'
-import NoEncontrada from './NoEncontrada'
+import { PaginaCodigo } from './PaginaCodigo'
 
 // "12" -> 12; "abc", "1.5", "-3" -> null (FE-002: el parámetro de URL es dato externo)
 function idValido(texto: string | undefined): number | null {
@@ -25,7 +25,7 @@ export default function DetalleArtista() {
   const artista = useArtista(id) // con id null no llama a la API (TEST-FE-ART-003)
   const eventos = useEventosPorArtista(artista.data?.stageName)
 
-  if (id === null) return <NoEncontrada />
+  if (id === null) return <PaginaCodigo codigo="404" mensaje="No encontramos esta página." />
   if (artista.isPending) {
     return (
       <Contenedor>
@@ -34,7 +34,7 @@ export default function DetalleArtista() {
     )
   }
   if (artista.isError) {
-    if (esApiError(artista.error, 404)) return <NoEncontrada />
+    if (esApiError(artista.error, 404)) return <PaginaCodigo codigo="404" mensaje="No encontramos esta página." />
     return (
       <Contenedor>
         <EstadoError mensaje={mensajeDeError(artista.error)} onReintentar={() => void artista.refetch()} />

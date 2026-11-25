@@ -9,7 +9,7 @@ import { Tarjeta } from '../componentes/Tarjeta'
 import { useSede } from '../funcionalidades/sedes/hooks'
 import { esApiError, mensajeDeError } from '../lib/errores'
 import { RUTAS } from '../lib/rutas'
-import NoEncontrada from './NoEncontrada'
+import { PaginaCodigo } from './PaginaCodigo'
 
 // PRD Frontend §9.7 (DetalleSede.png), FR-FE-VEN-002
 export default function DetalleSede() {
@@ -24,7 +24,7 @@ export default function DetalleSede() {
     )
   }
   if (sede.isError) {
-    if (esApiError(sede.error, 404)) return <NoEncontrada />
+    if (esApiError(sede.error, 404)) return <PaginaCodigo codigo="404" mensaje="No encontramos esta página." />
     return (
       <Contenedor ancho="estrecho">
         <EstadoError mensaje={mensajeDeError(sede.error)} onReintentar={() => void sede.refetch()} />
